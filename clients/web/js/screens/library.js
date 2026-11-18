@@ -70,6 +70,11 @@ export function render(ctx) {
       <h1 class="t-headline">Find, play, and send your files</h1>
       <p class="support-line">128 files · 14.2 GB</p>
     </div>
+    ${
+      ctx.ui.share
+        ? `<div class="banner" role="status"><span class="banner-body">Web share: <a href="${escapeHtml(ctx.ui.share.url)}">${escapeHtml(ctx.ui.share.url)}</a> · code ${escapeHtml(ctx.ui.share.pin)}</span><button class="btn btn-quiet btn-sm" data-action="webshare-stop">Stop</button></div>`
+        : ''
+    }
     <label class="field-label" for="library-search">Search your files</label>
     <div class="search-field">
       ${icon('search', 24)}
@@ -110,6 +115,13 @@ export function render(ctx) {
 }
 
 export const actions = {
+  'webshare-stop': async (ctx) => {
+    await ctx.invoke('webshare.stop', {});
+    ctx.app.ui.share = null;
+    ctx.toast('Web share stopped');
+    ctx.render();
+  },
+
   'library-filter': (ctx, el) => {
     ctx.app.ui.libraryFilter = el.dataset.filter;
     ctx.render();
@@ -133,16 +145,28 @@ export const actions = {
     const selected = ctx.ui.selectedIds || [];
     const items = ctx.s.library.filter((i) => selected.includes(i.id));
     if (!items.length) return;
-    ctx.app.ui.selection = items.map((i) => ({ id: i.id, name: i.name, kind: i.kind, size: i.size }));
+    ctx.app.ui.selection = items.map((i) => ({ id: i.id, libraryId: i.id, name: i.name, kind: i.kind, size: i.size, path: i.path }));
     ctx.app.ui.selectedIds = [];
     ctx.app.ui.pickTarget = true;
     ctx.go('nearby');
     ctx.toast('Choose a device to send to');
   },
 
-  'library-share': (ctx) => {
-    const count = (ctx.ui.selectedIds || []).length;
-    ctx.toast(`Shared ${count} ${count === 1 ? 'file' : 'files'}`);
+  'library-share': async (ctx) => {
+    const ids = ctx.ui.selectedIds || [];
+    if (!ids.length) return;
+    const items = ctx.s.library.filter((item) => ids.includes(item.id) && (item.path || item.id)).map((item) => ({
+      ...(item.path ? { path: item.path } : { id: item.id }), name: item.name,
+    }));
+    if (!items.length) {
+      ctx.toast('No shareable library files selected');
+      return;
+    }
+    const share = await ctx.invoke('webshare.start', { files: items });
+    ctx.app.ui.selectedIds = [];
+    ctx.app.ui.share = share;
+    ctx.toast(`Web share ${share.url} · code ${share.pin}`);
+    ctx.render();
   },
 
   'library-delete': (ctx) => {

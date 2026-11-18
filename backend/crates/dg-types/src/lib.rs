@@ -92,8 +92,14 @@ pub const EXTENSION_EVENTS: &[&str] = &[
     "webshare.stopped",
 ];
 
+/// Additive commands (section 3.5 says changes are additive). Not part of the 41 design names.
+/// `session.list` lets a client reload active sessions on resync, as section 3.5 requires.
+/// `files.stage` accepts a browser file upload (base64) and returns a daemon path to send;
+/// `transfer.start` is an alias for `session.send` that also accepts `items[].stagedId`.
+pub const EXTENSION_COMMANDS: &[&str] = &["session.list", "files.stage", "transfer.start"];
+
 pub fn is_known_command(method: &str) -> bool {
-    COMMANDS.contains(&method)
+    COMMANDS.contains(&method) || EXTENSION_COMMANDS.contains(&method)
 }
 
 /// Stable error codes. The string form is what clients see in `error.code`.
@@ -124,6 +130,12 @@ pub enum ErrorCode {
     HashMismatch,
     #[serde(rename = "PERMISSION")]
     Permission,
+    // Not in the design taxonomy: a 404/410 from the source server (section 5.3: terminal failure).
+    #[serde(rename = "NOT_FOUND")]
+    NotFound,
+    // Not in the design taxonomy: generic HTTP failure from a source server.
+    #[serde(rename = "HTTP_ERROR")]
+    HttpError,
     // API boundary codes
     #[serde(rename = "INVALID_PARAMS")]
     InvalidParams,
@@ -160,6 +172,21 @@ pub enum ErrorCode {
 }
 
 impl ErrorCode {
+    /// Parses the wire string back into a code (used when an error crosses a boundary as text).
+    pub fn from_str_code(s: &str) -> Option<ErrorCode> {
+        let all = [
+            ErrorCode::NetUnreachable, ErrorCode::TlsMismatch, ErrorCode::Declined, ErrorCode::Timeout,
+            ErrorCode::NoSpace, ErrorCode::SrcChanged, ErrorCode::RangeUnsupported, ErrorCode::ExtractFailed,
+            ErrorCode::DrmProtected, ErrorCode::AuthRequired, ErrorCode::HashMismatch, ErrorCode::Permission,
+            ErrorCode::NotFound, ErrorCode::HttpError, ErrorCode::InvalidParams, ErrorCode::UnknownMethod,
+            ErrorCode::UnknownDevice, ErrorCode::UnknownSession, ErrorCode::UnknownJob, ErrorCode::UnknownItem,
+            ErrorCode::Blocked, ErrorCode::Busy, ErrorCode::PairFailed, ErrorCode::NotAllowed,
+            ErrorCode::Unauthorized, ErrorCode::Forbidden, ErrorCode::PayloadTooLarge, ErrorCode::RateLimited,
+            ErrorCode::NotImplemented, ErrorCode::Internal,
+        ];
+        all.into_iter().find(|c| c.as_str() == s)
+    }
+
     pub fn as_str(self) -> &'static str {
         use ErrorCode::*;
         match self {
@@ -175,6 +202,8 @@ impl ErrorCode {
             AuthRequired => "AUTH_REQUIRED",
             HashMismatch => "HASH_MISMATCH",
             Permission => "PERMISSION",
+            NotFound => "NOT_FOUND",
+            HttpError => "HTTP_ERROR",
             InvalidParams => "INVALID_PARAMS",
             UnknownMethod => "UNKNOWN_METHOD",
             UnknownDevice => "UNKNOWN_DEVICE",
@@ -298,6 +327,9 @@ pub struct FileMeta {
 /// `POST /api/v1/session/offer` request.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct OfferRequest {
+    /// Optional proposed session id (additive). The response `sid` is authoritative.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sid: Option<String>,
     pub sender: Sender,
     pub files: Vec<FileMeta>,
     #[serde(rename = "totalSize")]
@@ -440,7 +472,8 @@ mod tests {
 
     #[test]
     fn every_design_command_is_listed() {
-        // The 43 names in dropgrab-app-design.md section 3.5.
+        // The 41 names in the "Representative commands" table of dropgrab-app-design.md section 3.5
+        // (checked against the table rows: 41 backticked names, no duplicates).
         let design = [
             "devices.list", "devices.trust", "devices.block", "devices.forget",
             "devices.set_allowance", "visibility.set", "session.send", "session.respond",
@@ -453,7 +486,7 @@ mod tests {
             "webshare.start", "webshare.stop", "settings.get", "settings.set",
             "diagnostics.run", "logs.export", "backend.info", "backend.shutdown",
         ];
-        assert_eq!(design.len(), 43);
+        assert_eq!(design.len(), 41);
         for name in design {
             assert!(COMMANDS.contains(&name), "missing command {name}");
         }

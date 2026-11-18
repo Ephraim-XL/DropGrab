@@ -83,8 +83,7 @@ function incomingSheet(ctx) {
 function chooseSheet(ctx) {
   const { ui } = ctx;
   const rows = [
-    ['photos', 'image', 'Photos and videos'],
-    ['documents', 'file-text', 'Documents'],
+    ...(ctx.realBackend ? [] : [['photos', 'image', 'Photos and videos'], ['documents', 'file-text', 'Documents']]),
     ['folders', 'folder', 'Folders'],
     ['clipboard', 'clipboard-paste', 'Text from the clipboard'],
     ['library', 'folder-open', 'Files already in DropGrab'],
@@ -95,6 +94,8 @@ function chooseSheet(ctx) {
     title: 'Choose what to send',
     body: `
       <p class="t-body ink-secondary">Pick files or folders, then pick a device</p>
+      <label class="btn btn-secondary btn-block" for="browser-file-picker">Choose files from this device</label>
+      <input id="browser-file-picker" type="file" multiple hidden>
       <div class="list">
         ${rows
           .map(
@@ -254,7 +255,8 @@ function deleteSheet(ctx) {
 function downloadMenuSheet(ctx) {
   const job = ctx.s.downloads.find((j) => j.id === ctx.ui.downloadId);
   if (!job) return '';
-  const remote = ctx.s.devices.find((d) => d.trust === 'trusted' && d.allowRemote);
+  const device = ctx.s.devices.find((d) => d.trust === 'trusted' && d.allowRemote);
+  const eligibleJob = ctx.s.downloads.find((d) => d.state === 'finished' && d.url);
   return shell({
     labelledBy: 'download-menu-title',
     title: escapeHtml(job.name),
@@ -264,11 +266,11 @@ function downloadMenuSheet(ctx) {
         <span class="row-body"><span class="row-title">Send to a device</span></span>
       </button>
       ${
-        remote
-          ? `<button type="button" class="list-row" data-action="remote-download" data-id="${job.id}">
+        device && eligibleJob
+          ? `<button type="button" class="list-row" data-action="remote-download" data-id="${eligibleJob.id}">
               <span class="row-icon">${icon('monitor', 24)}</span>
               <span class="row-body">
-                <span class="row-title">Download on ${escapeHtml(remote.name)}</span>
+                <span class="row-title">Download on ${escapeHtml(device.name)}</span>
                 <span class="row-meta">Only trusted devices that allow it</span>
               </span>
             </button>`
@@ -388,6 +390,8 @@ export const actions = {
       accept: true,
       trust: ctx.ui.alwaysAccept,
     });
+    ctx.backend.state.incoming = null;
+    await ctx.invoke('session.list');
     ctx.app.ui.alwaysAccept = false;
     ctx.go('transfer');
   },
@@ -395,6 +399,8 @@ export const actions = {
   'decline-incoming': async (ctx) => {
     if (!ctx.s.incoming) return;
     await ctx.invoke('session.respond', { sid: ctx.s.incoming.sid, accept: false, trust: false });
+    ctx.backend.state.incoming = null;
+    await ctx.invoke('session.list');
     ctx.toast('Declined the files');
     ctx.render();
   },
@@ -409,6 +415,8 @@ export const actions = {
     const device = ctx.s.devices.find((d) => d.id === ctx.ui.deviceId);
     if (!device) return;
     await ctx.invoke('devices.set_allowance', { deviceId: device.id, autoAccept: !device.autoAccept });
+    const result = await ctx.invoke('devices.list');
+    ctx.backend.state.devices = result.devices || [];
     ctx.render();
   },
 
@@ -416,6 +424,8 @@ export const actions = {
     const device = ctx.s.devices.find((d) => d.id === ctx.ui.deviceId);
     if (!device) return;
     await ctx.invoke('devices.set_allowance', { deviceId: device.id, allowRemote: !device.allowRemote });
+    const result = await ctx.invoke('devices.list');
+    ctx.backend.state.devices = result.devices || [];
     ctx.render();
   },
 
@@ -427,6 +437,10 @@ export const actions = {
   'confirm-forget': async (ctx) => {
     const device = ctx.s.devices.find((d) => d.id === ctx.ui.deviceId);
     if (device) await ctx.invoke('devices.forget', { deviceId: device.id });
+    if (device) {
+      const result = await ctx.invoke('devices.list');
+      ctx.backend.state.devices = result.devices || [];
+    }
     ctx.closeSheet();
     ctx.toast(device ? `Forgot ${device.name}` : 'Device forgotten');
   },
@@ -434,6 +448,10 @@ export const actions = {
   'block-device': async (ctx) => {
     const device = ctx.s.devices.find((d) => d.id === ctx.ui.deviceId);
     if (device) await ctx.invoke('devices.block', { deviceId: device.id });
+    if (device) {
+      const result = await ctx.invoke('devices.list');
+      ctx.backend.state.devices = result.devices || [];
+    }
     ctx.closeSheet();
     ctx.toast(device ? `Blocked ${device.name}` : 'Device blocked');
   },
@@ -454,11 +472,16 @@ export const actions = {
     ctx.go('quality');
   },
 
-  'remote-download': (ctx) => {
+  'remote-download': async (ctx, el) => {
+    const job = ctx.s.downloads.find((d) => d.id === el.dataset.id);
     const device = ctx.s.devices.find((d) => d.trust === 'trusted' && d.allowRemote);
-    ctx.invoke('remote.request_download', { deviceId: device ? device.id : null });
+    if (!job?.url || !device) {
+      ctx.toast('This download or eligible device is unavailable.');
+      return;
+    }
+    await ctx.invoke('remote.request_download', { deviceId: device.id, url: job.url });
     ctx.closeSheet();
-    ctx.toast(device ? `${device.name} will download this file` : 'Remote download queued');
+    ctx.toast(`${device.name} will download this file`);
   },
 
   'save-device-name': async (ctx) => {
@@ -476,6 +499,8 @@ export const actions = {
   'confirm-delete': async (ctx) => {
     const ids = ctx.ui.deleteIds || [];
     if (ids.length) await ctx.invoke('library.delete', { ids });
+    await ctx.backend.refreshLibrary?.();
+    ctx.app.ui.selectedIds = [];
     ctx.app.ui.deleteIds = [];
     ctx.closeSheet();
     ctx.toast(ids.length === 1 ? 'Deleted 1 file' : `Deleted ${ids.length} files`);

@@ -1,6 +1,6 @@
 // DropGrab web client: router, state, actions, and rendering.
 
-import { MockBackend } from './mock/backend.js';
+import { backend, REAL_BACKEND } from './backend/select.js';
 import { navHtml, applyTheme, watchSystemTheme } from './ui/shell.js';
 import { escapeHtml } from './ui/dom.js';
 import { renderSheet, actions as sheetActions } from './ui/sheets.js';
@@ -49,7 +49,6 @@ const ACTION_HANDLERS = Object.assign(
   settings.actions,
 );
 
-const backend = new MockBackend();
 const root = document.getElementById('root');
 
 const app = {
@@ -90,6 +89,8 @@ function makeCtx() {
     s: backend.state,
     ui: app.ui,
     app,
+    backend,
+    realBackend: REAL_BACKEND,
     invoke: (method, params) => backend.invoke(method, params),
     go,
     openSheet,
@@ -186,7 +187,13 @@ function go(route) {
   window.scrollTo({ top: 0, behavior: 'auto' });
 
   if (route === 'qr' && !backend.state.pairing) {
-    backend.invoke('pair.qr_create', {}).then(scheduleRender);
+    backend.invoke('pair.qr_create', {}).then((pairing) => {
+      backend.state.pairing = pairing;
+      scheduleRender();
+    }).catch((error) => {
+      console.error(error);
+      toast('Could not create a pairing code.');
+    });
   }
 }
 
@@ -262,9 +269,25 @@ document.addEventListener('input', (event) => {
 
 document.addEventListener('change', async (event) => {
   const el = event.target;
+  if (el.id === 'browser-file-picker') {
+    const files = [...(el.files || [])];
+    if (files.length) {
+      app.ui.selection = files.map((file, index) => ({
+        id: `picked-${index}-${file.name}`,
+        name: file.name,
+        kind: kindFromMime(file.type),
+        size: file.size,
+        file,
+      }));
+      render();
+    }
+    return;
+  }
   const setting = el.dataset ? el.dataset.setting : null;
   if (!setting) return;
-  await backend.invoke('settings.set', { [setting]: el.value });
+  const value = el.type === 'checkbox' ? el.checked : (el.type === 'number' ? Number(el.value) : el.value);
+  await backend.invoke('settings.set', { [setting]: value });
+  if (setting === 'visibility') backend.invoke('visibility.set', { visibility: value }).catch(console.error);
   render();
 });
 
@@ -370,6 +393,7 @@ document.addEventListener('drop', async (event) => {
       name: file.name,
       kind: kindFromMime(file.type),
       size: file.size,
+      file,
     }));
     if (tile) {
       const { startSend } = await import('./screens/nearby.js');
@@ -389,6 +413,22 @@ document.addEventListener('drop', async (event) => {
 /* ---------- theme ---------- */
 
 watchSystemTheme(backend.state.settings);
+
+if (REAL_BACKEND) {
+  backend.subscribe((event) => {
+    if (event.type === 'session.offered') {
+      backend.state.incoming = event.data;
+      if (app.route !== 'transfer') app.ui.sheet = null;
+    }
+  });
+  backend.initialize().then(() => {
+    watchSystemTheme(backend.state.settings);
+    render();
+  }).catch((error) => {
+    console.error('Could not connect to dropgrabd:', error);
+    toast('Could not connect to DropGrab. Check the daemon and API configuration.');
+  });
+}
 
 /* ---------- boot ---------- */
 
@@ -416,9 +456,9 @@ if (location.hash !== `#/${app.route}`) {
 }
 render();
 
-if (new URLSearchParams(location.search).has('incoming')) {
-  setTimeout(() => backend.simulateIncoming(), 1200);
-}
+  if (new URLSearchParams(location.search).has('incoming') && !REAL_BACKEND) {
+    setTimeout(() => backend.simulateIncoming(), 1200);
+  }
 
 // Demo hooks, for reviewing screens that a peer normally triggers.
 window.dropgrab = {

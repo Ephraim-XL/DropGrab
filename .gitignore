@@ -1,0 +1,21 @@
+# DropGrab repository root
+
+# Rust build output
+/backend/target/
+target/
+
+# Rust compiler/backup artifacts
+*.rs.bk
+*.orig
+*.rej
+
+# Local test/debug output
+*.log
+*.trace
+
+# Editor and OS noise
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*~

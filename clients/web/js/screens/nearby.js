@@ -148,11 +148,48 @@ export const actions = {
   },
 };
 
+export async function fileContentBase64(file) {
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  let binary = '';
+  const chunkSize = 0x8000;
+  for (let offset = 0; offset < bytes.length; offset += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(offset, offset + chunkSize));
+  }
+  return btoa(binary);
+}
+
 export async function startSend(ctx, deviceId) {
-  const items = ctx.ui.selection;
+  const items = [];
+  try {
+    for (const item of ctx.ui.selection) {
+      if (item.path) {
+        items.push({ path: item.path, name: item.name });
+      } else if (item.libraryId) {
+        items.push({ id: item.libraryId, name: item.name });
+      } else if (ctx.s.library.some((libraryItem) => libraryItem.id === item.id)) {
+        items.push({ id: item.id, name: item.name });
+      } else if (item.file instanceof Blob) {
+        const staged = await ctx.invoke('files.stage', {
+          name: item.file.name || item.name,
+          content: await fileContentBase64(item.file),
+          mime: item.file.type || 'application/octet-stream',
+        });
+        items.push({ stagedId: staged.id, name: staged.name });
+      } else {
+        throw new Error(`Unsupported file selection: ${item.name || 'unknown file'}`);
+      }
+    }
+  } catch (error) {
+    console.error('Could not stage selected files:', error);
+    ctx.toast(error.code === 'PAYLOAD_TOO_LARGE'
+      ? 'A selected file is over the 8 MiB browser staging limit.'
+      : 'The selected files could not be staged. Try again or choose files from the DropGrab library.');
+    return;
+  }
   if (!items.length) return;
   try {
-    await ctx.invoke('session.send', { peer: deviceId, items });
+    const method = items.some((item) => item.stagedId) ? 'transfer.start' : 'session.send';
+    await ctx.invoke(method, { peer: deviceId, items });
     ctx.app.ui.selection = [];
     ctx.app.ui.pickTarget = false;
     ctx.go('transfer');

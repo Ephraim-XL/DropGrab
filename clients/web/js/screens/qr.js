@@ -60,14 +60,14 @@ function qrSvg(seed) {
 
 export function render(ctx) {
   const { s, ui } = ctx;
-  const pairing = s.pairing || { code: '482 917', expiresAt: Date.now() + 108000 };
+  const pairing = s.pairing || { code: '...', expiresAt: Date.now() + 108000, uri: '' };
   const msLeft = Math.max(0, pairing.expiresAt - Date.now());
 
   const step = ui.qrStep || 'idle';
 
   const idle = `
     <div class="qr-panel">
-      <div class="qr-code">${qrSvg(`dropgrab://pair?id=${s.self.id}&pin=482917`)}</div>
+      <div class="qr-code">${pairing.uri ? `<a href="${escapeHtml(pairing.uri)}">${qrSvg(pairing.uri)}</a>` : '<p class="t-body-sm">Creating pairing code…</p>'}</div>
       <div class="stack stack-8">
         <p class="t-numeric">Your code: <span class="mono-code">${escapeHtml(pairing.code)}</span></p>
         <p class="t-numeric ink-muted">Expires in ${fmtClock(msLeft)}</p>
@@ -75,11 +75,24 @@ export function render(ctx) {
       <p class="fingerprint">${escapeHtml(s.self.name)} · fingerprint ${escapeHtml(s.self.fingerprint)}</p>
     </div>
     <button type="button" class="btn btn-primary btn-block" data-action="qr-scan">
-      Scan another device's code ${icon('scan-line', 24)}
+      Enter another device's QR URI ${icon('scan-line', 24)}
     </button>
     <p class="t-body-sm ink-secondary prose">Both devices need the same code before any file is sent.</p>
     <a class="btn btn-quiet" href="share.html" style="padding:0;height:auto;align-self:flex-start">Open the web share page</a>
   `;
+
+  const scanner = step === 'scanning'
+    ? `<div class="section">
+        <p class="t-body-sm ink-secondary prose">${escapeHtml(ui.qrMessage || 'Point your camera at the other device’s pairing QR code. You can also paste its URI below.')}</p>
+        ${ui.qrCamera ? '<video id="qr-camera" autoplay playsinline muted style="width:100%;max-width:420px;border-radius:var(--radius-md)"></video>' : ''}
+        <label class="field-label" for="pairing-uri">Pairing URI</label>
+        <input class="input" id="pairing-uri" autocomplete="off" placeholder="dropgrab://pair…">
+        <div class="row-16" style="flex-wrap:wrap">
+          <button type="button" class="btn btn-primary" data-action="qr-paste">Use pasted URI</button>
+          <button type="button" class="btn btn-secondary" data-action="qr-cancel">Cancel</button>
+        </div>
+      </div>`
+    : '';
 
   const confirm = `
     <div class="section">
@@ -119,16 +132,72 @@ export function render(ctx) {
       <h1 class="t-headline">Connect with a QR code</h1>
       <p class="support-line">Use this when devices don't appear on their own</p>
     </div>
-    ${step === 'idle' ? idle : step === 'confirm' ? confirm : connected}
+    ${step === 'idle' ? idle : step === 'scanning' ? scanner : step === 'confirm' ? confirm : connected}
   `;
+}
+
+async function usePairingUri(ctx, uri) {
+  const stream = ctx.app.ui.qrStream;
+  if (stream) stream.getTracks().forEach((track) => track.stop());
+  ctx.app.ui.qrStream = null;
+  const peer = await ctx.invoke('pair.qr_scan', { uri });
+  ctx.app.ui.qrPeer = peer;
+  ctx.app.ui.qrStep = 'confirm';
+  ctx.app.ui.qrMessage = '';
+  ctx.render();
 }
 
 export const actions = {
   'qr-scan': async (ctx) => {
-    const peer = await ctx.invoke('pair.qr_scan', {});
-    ctx.app.ui.qrPeer = peer;
-    ctx.app.ui.qrStep = 'confirm';
+    const BarcodeDetectorApi = globalThis.BarcodeDetector;
+    const cameraAvailable = Boolean(BarcodeDetectorApi && navigator.mediaDevices?.getUserMedia);
+    ctx.app.ui.qrStep = 'scanning';
+    ctx.app.ui.qrMessage = cameraAvailable
+      ? 'Camera scan is available. Allow camera access and point it at the other device’s pairing QR code, or paste the pairing URI.'
+      : 'Camera scanning is unavailable in this browser. Paste the pairing URI from the other device below.';
+    ctx.app.ui.qrCamera = cameraAvailable;
     ctx.render();
+    if (!cameraAvailable) return;
+
+    try {
+      const detector = new BarcodeDetectorApi({ formats: ['qr_code'] });
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      ctx.app.ui.qrStream = stream;
+      const video = document.getElementById('qr-camera');
+      if (!video || ctx.app.ui.qrStep !== 'scanning') {
+        stream.getTracks().forEach((track) => track.stop());
+        return;
+      }
+      video.srcObject = stream;
+      await video.play();
+      const scan = async () => {
+        if (ctx.app.ui.qrStep !== 'scanning' || ctx.app.ui.qrStream !== stream) return;
+        try {
+          const codes = await detector.detect(video);
+          if (codes.length && codes[0].rawValue) {
+            stream.getTracks().forEach((track) => track.stop());
+            ctx.app.ui.qrStream = null;
+            await usePairingUri(ctx, codes[0].rawValue);
+            return;
+          }
+        } catch (error) {
+          console.warn('QR camera scan failed:', error);
+        }
+        requestAnimationFrame(scan);
+      };
+      requestAnimationFrame(scan);
+    } catch (error) {
+      ctx.app.ui.qrStream?.getTracks().forEach((track) => track.stop());
+      ctx.app.ui.qrStream = null;
+      ctx.app.ui.qrCamera = false;
+      ctx.app.ui.qrMessage = 'Camera access was unavailable. Paste the pairing URI from the other device below.';
+      ctx.render();
+    }
+  },
+
+  'qr-paste': async (ctx) => {
+    const uri = document.getElementById('pairing-uri')?.value?.trim();
+    if (uri) await usePairingUri(ctx, uri);
   },
 
   'qr-match': (ctx) => {
@@ -137,7 +206,10 @@ export const actions = {
   },
 
   'qr-cancel': (ctx) => {
+    ctx.app.ui.qrStream?.getTracks().forEach((track) => track.stop());
+    ctx.app.ui.qrStream = null;
     ctx.app.ui.qrStep = 'idle';
+    ctx.app.ui.qrCamera = false;
     ctx.app.ui.qrTrust = false;
     ctx.render();
   },

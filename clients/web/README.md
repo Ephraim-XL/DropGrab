@@ -4,8 +4,8 @@ The DropGrab UI as a dependency-free web client: plain HTML, CSS, and ES modules
 `../../../dropgrab-ui-design.md` for tokens, components, screens, and copy, and
 `../../../dropgrab-app-design.md` for the product context and the control API names.
 
-There is no backend. A mock control API in `js/mock/` answers the same commands and emits the
-same events the Rust engine would, so every screen is driven by state and events.
+The frontend supports both the development mock (`js/mock/`) and the `dropgrabd` loopback
+control API. The mock remains the default unless real mode is configured.
 
 ## Run it
 
@@ -19,8 +19,8 @@ python3 -m http.server 8000
 Then open <http://localhost:8000/>. Opening `index.html` directly shows the same instructions
 instead of a blank page.
 
-No install step, no build step, no network requests. Everything (including the Lucide icons)
-is local.
+No install/build step is required. The UI assets are local; real-backend mode makes authenticated
+requests to the local daemon.
 
 Reference captures are in `screenshots/`: `desktop-nearby-dark.png` (1440×900) and
 `compact-downloads-light.png` (390×844 at 2×).
@@ -58,8 +58,8 @@ It is also linked from the bottom of the QR screen.
 
 ## Mock control API
 
-`js/mock/backend.js` exposes `invoke(method, params)` and an event stream, with the command
-names from `dropgrab-app-design.md` §3.5:
+`js/mock/backend.js` (development) and `js/backend/client.js` (real daemon) expose
+`invoke(method, params)` and a common event stream. Commands are named per §3.5:
 
 - Devices: `devices.list`, `devices.trust`, `devices.block`, `devices.forget`,
   `devices.set_allowance`, `visibility.set`
@@ -79,9 +79,9 @@ Events emitted: `peer.up`, `peer.down`, `session.offered`, `session.state`, `ses
 `library.changed`, `device.changed`, `notification.request`, `error`, `resync`, plus
 `settings.changed`, `pair.updated` and `webshare.*` for the mock.
 
-Timers stand in for the engine: transfers and downloads advance while a job is active, so the
-progress screens are live. Settings persist in `localStorage` under `dropgrab.settings.v1`;
-first-run completion persists under `dropgrab.firstRun.v1`.
+Mock mode uses timers for simulated transfers/downloads; real mode connects to daemon events and
+loads state from `devices.list`, `settings.get`, `downloads.list`, `library.query`, and session
+queries. First-run completion persists under `dropgrab.firstRun.v1`.
 
 ### Reviewing states that a peer normally triggers
 
@@ -95,6 +95,36 @@ dropgrab.state                     // read the mock backend state
 
 `http://localhost:8000/?incoming=1` opens the incoming request sheet automatically 1.2 s after
 load, which is the quickest way to see the Accept → transfer flow.
+
+## Real daemon connection
+
+The UI uses a browser `fetch` client for the daemon's loopback HTTP API (`POST /rpc`, `GET /events`).
+For a UI served at `http://localhost:8080`, start `dropgrabd` with that exact origin allowlisted:
+
+```sh
+./target/release/dropgrabd --no-discovery \\
+  --allow-origin http://localhost:8080
+```
+
+Use the origin only (scheme, host, and port; no trailing slash). Add another repeatable
+`--allow-origin` for any other UI origin, such as `http://127.0.0.1:8080`. For example, serve the
+client with `cd clients/web && python3 -m http.server 8080` and open
+<http://localhost:8080/>. The daemon still requires a bearer token for browser requests.
+
+Supply the token to the UI before loading `js/main.js` with
+`window.DROPGRAB_CONFIG = { mode: 'real', baseUrl: 'http://127.0.0.1:53319', token: '<token>' }`,
+or save the same values as JSON in `localStorage['dropgrab.control.v1']`. Get `<token>` from
+`<data-dir>/api.token` (created by the daemon) or start it with `--print-token` and use the printed
+token. Do not publish the token or include it in a remotely served page; it is a local control
+secret. If no token is configured, the mock remains active.
+
+Browser-picked files are read as base64, staged with `files.stage`, and sent using
+`transfer.start` with each returned `stagedId` (the daemon staging limit is 8 MiB per file).
+Library items and trusted daemon paths continue to use their existing IDs/paths. The QR screen uses
+the browser `BarcodeDetector` and camera when available, and otherwise offers pairing-URI paste.
+A native desktop shell bridge is not part of this change. `node --test js/backend/client.test.mjs`
+runs the client unit tests.
+
 
 ## Keyboard
 

@@ -1,0 +1,12 @@
+# Backend build output (cargo writes here; never tracked)
+/target/
+**/target/
+
+# Compiler and patch leftovers
+*.rs.bk
+*.orig
+*.rej
+
+# Local run artifacts
+*.log
+/tmp/
