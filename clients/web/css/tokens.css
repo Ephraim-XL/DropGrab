@@ -1,0 +1,161 @@
+/* DropGrab design tokens.
+   Values come from dropgrab-ui-design.md (YAML front matter). Tokens win over prose.
+   No component below reads a raw hex outside this file. */
+
+:root {
+  /* colour, light */
+  --primary: #12161A;
+  --secondary: #444C56;
+  --muted: #58616C;
+  --neutral: #FFFFFF;
+  --surface: #F4F5F7;
+  --sunken: #E8EBEE;
+  --outline: #5C6570;
+  --divider: #E1E4E8;
+  --accent: #1646D6;
+  --accent-pressed: #0F36AE;
+  --accent-tint: #E6EDFE;
+  --on-accent: #FFFFFF;
+
+  /* spacing, 4/8 scale */
+  --sp-xs: 4px;
+  --sp-sm: 8px;
+  --sp-md: 16px;
+  --sp-lg: 24px;
+  --sp-xl: 32px;
+  --sp-xxl: 48px;
+  --sp-xxxl: 64px;
+
+  /* shape */
+  --r-sm: 4px;
+  --r-md: 8px;
+  --r-lg: 16px;
+  --r-full: 9999px;
+
+  /* motion */
+  --dur-press: 120ms;
+  --dur-sheet: 200ms;
+  --dur-screen: 320ms;
+
+  /* elevation: the only shadow in the system */
+  --sheet-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
+  --scrim: rgba(0, 0, 0, 0.5);
+
+  /* pairing code panel: always dark modules on white paper so it stays scannable */
+  --qr-ink: #12161A;
+  --qr-paper: #FFFFFF;
+
+  --font: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+  --fs-display: 2rem;      /* 32 / 40 */
+  --lh-display: 2.5rem;
+  --fs-headline: 1.5rem;   /* 24 / 32 */
+  --lh-headline: 2rem;
+  --fs-title: 1.25rem;     /* 20 / 28 */
+  --lh-title: 1.75rem;
+  --fs-body: 1rem;         /* 16 / 24 */
+  --lh-body: 1.5rem;
+  --fs-body-sm: 0.875rem;  /* 14 / 20 */
+  --lh-body-sm: 1.25rem;
+  --fs-caption: 0.75rem;   /* 12 / 16 */
+  --lh-caption: 1rem;
+
+  --nav-compact: 64px;
+  --nav-rail: 80px;
+  --nav-sidebar: 240px;
+  --content-max: 1120px;
+  --text-col: 640px;
+}
+
+:root[data-theme="dark"] {
+  --primary: #F2F4F6;
+  --secondary: #C3C9D0;
+  --muted: #A3ABB5;
+  --neutral: #0E1114;
+  --surface: #171B20;
+  --sunken: #232A31;
+  --outline: #8A939E;
+  --divider: #2A3138;
+  --accent: #8FB0FF;
+  --accent-pressed: #B4CBFF;
+  --accent-tint: #16254F;
+  --on-accent: #0B1020;
+
+  --sheet-shadow: none;
+}
+
+/* Typography scales */
+.t-display, .t-headline, .t-title, .t-body, .t-body-sm, .t-label, .t-caption, .t-numeric {
+  font-family: var(--font);
+  margin: 0;
+  text-align: start;
+}
+
+.t-display {
+  font-size: var(--fs-display);
+  line-height: var(--lh-display);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.t-headline {
+  font-size: var(--fs-headline);
+  line-height: var(--lh-headline);
+  font-weight: 700;
+}
+
+.t-title {
+  font-size: var(--fs-title);
+  line-height: var(--lh-title);
+  font-weight: 600;
+}
+
+.t-body {
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  font-weight: 400;
+}
+
+.t-body-sm {
+  font-size: var(--fs-body-sm);
+  line-height: var(--lh-body-sm);
+  font-weight: 400;
+}
+
+.t-label {
+  font-size: var(--fs-body-sm);
+  line-height: var(--lh-body-sm);
+  font-weight: 600;
+}
+
+.t-caption {
+  font-size: var(--fs-caption);
+  line-height: var(--lh-caption);
+  font-weight: 500;
+}
+
+.t-numeric {
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* Text roles */
+.ink-primary { color: var(--primary); }
+.ink-secondary { color: var(--secondary); }
+.ink-muted { color: var(--muted); }
+.ink-accent { color: var(--accent); }
+
+/* Text size setting: 100%, 125%, 150% of the base scale. */
+:root[data-text="large"] { font-size: 20px; }
+:root[data-text="largest"] { font-size: 24px; }
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-press: 0ms;
+    --dur-sheet: 0ms;
+    --dur-screen: 0ms;
+  }
+}

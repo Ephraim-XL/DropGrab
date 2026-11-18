@@ -1,0 +1,14 @@
+/home/kali/Desktop/Hermes Work space/Dropgrap/backend/target/debug/build/serde/236a00d28c082265/out/serde-236a00d28c082265.d: /home/kali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.229/src/lib.rs /home/kali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.229/src/integer128.rs /home/kali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.229/src/private/mod.rs /home/kali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.229/src/private/de.rs /home/kali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.229/src/private/ser.rs /home/kali/Desktop/Hermes\ Work\ space/Dropgrap/backend/target/debug/build/serde/50f2385af70771cf/out/private.rs
+
+/home/kali/Desktop/Hermes Work space/Dropgrap/backend/target/debug/build/serde/236a00d28c082265/out/libserde-236a00d28c082265.rlib: /home/kali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.229/src/lib.rs /home/kali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.229/src/integer128.rs /home/kali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.229/src/private/mod.rs /home/kali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.229/src/private/de.rs /home/kali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.229/src/private/ser.rs /home/kali/Desktop/Hermes\ Work\ space/Dropgrap/backend/target/debug/build/serde/50f2385af70771cf/out/private.rs
+
+/home/kali/Desktop/Hermes Work space/Dropgrap/backend/target/debug/build/serde/236a00d28c082265/out/libserde-236a00d28c082265.rmeta: /home/kali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.229/src/lib.rs /home/kali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.229/src/integer128.rs /home/kali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.229/src/private/mod.rs /home/kali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.229/src/private/de.rs /home/kali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.229/src/private/ser.rs /home/kali/Desktop/Hermes\ Work\ space/Dropgrap/backend/target/debug/build/serde/50f2385af70771cf/out/private.rs
+
+/home/kali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.229/src/lib.rs:
+/home/kali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.229/src/integer128.rs:
+/home/kali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.229/src/private/mod.rs:
+/home/kali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.229/src/private/de.rs:
+/home/kali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.229/src/private/ser.rs:
+/home/kali/Desktop/Hermes\ Work\ space/Dropgrap/backend/target/debug/build/serde/50f2385af70771cf/out/private.rs:
+
+# env-dep:OUT_DIR=/home/kali/Desktop/Hermes Work space/Dropgrap/backend/target/debug/build/serde/50f2385af70771cf/out

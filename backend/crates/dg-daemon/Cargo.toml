@@ -1,0 +1,17 @@
+[package]
+name = "dg-daemon"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+description = "dropgrabd: DropGrab desktop/headless backend daemon"
+
+[[bin]]
+name = "dropgrabd"
+path = "src/main.rs"
+
+[dependencies]
+dg-core = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }

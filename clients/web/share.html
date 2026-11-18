@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Download files from Kofi's Pixel 8 · DropGrab</title>
+    <link rel="stylesheet" href="css/tokens.css" />
+    <link rel="stylesheet" href="css/app.css" />
+    <script>
+      (function () {
+        var dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+      })();
+    </script>
+  </head>
+  <body>
+    <div class="share-page">
+      <div class="content" id="share-root"></div>
+    </div>
+    <script type="module" src="js/webshare.js"></script>
+  </body>
+</html>

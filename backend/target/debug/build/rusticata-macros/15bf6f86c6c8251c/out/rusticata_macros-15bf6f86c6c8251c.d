@@ -1,0 +1,9 @@
+/home/kali/Desktop/Hermes Work space/Dropgrap/backend/target/debug/build/rusticata-macros/15bf6f86c6c8251c/out/rusticata_macros-15bf6f86c6c8251c.d: /home/kali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rusticata-macros-4.1.0/src/lib.rs /home/kali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rusticata-macros-4.1.0/src/combinator.rs /home/kali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rusticata-macros-4.1.0/src/debug.rs /home/kali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rusticata-macros-4.1.0/src/macros.rs /home/kali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rusticata-macros-4.1.0/src/traits.rs
+
+/home/kali/Desktop/Hermes Work space/Dropgrap/backend/target/debug/build/rusticata-macros/15bf6f86c6c8251c/out/librusticata_macros-15bf6f86c6c8251c.rmeta: /home/kali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rusticata-macros-4.1.0/src/lib.rs /home/kali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rusticata-macros-4.1.0/src/combinator.rs /home/kali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rusticata-macros-4.1.0/src/debug.rs /home/kali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rusticata-macros-4.1.0/src/macros.rs /home/kali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rusticata-macros-4.1.0/src/traits.rs
+
+/home/kali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rusticata-macros-4.1.0/src/lib.rs:
+/home/kali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rusticata-macros-4.1.0/src/combinator.rs:
+/home/kali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rusticata-macros-4.1.0/src/debug.rs:
+/home/kali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rusticata-macros-4.1.0/src/macros.rs:
+/home/kali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rusticata-macros-4.1.0/src/traits.rs:

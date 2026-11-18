@@ -1,0 +1,1 @@
+{"$message_type":"unused_extern","lint_level":"force-warn","unused_extern_names":["axum","axum_server","bytes","dg_types","futures_util","hex","http_body_util","rand","rcgen","reqwest","rusqlite","rustls","serde","serde_json","sha2","socket2","thiserror","time","tokio","tokio_rustls","tracing","uuid","x509_parser"]}

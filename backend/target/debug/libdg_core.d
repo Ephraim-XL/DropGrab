@@ -1,0 +1,1 @@
+/home/kali/Desktop/Hermes\ Work\ space/Dropgrap/backend/target/debug/libdg_core.rlib: /home/kali/Desktop/Hermes\ Work\ space/Dropgrap/backend/crates/dg-core/src/lib.rs /home/kali/Desktop/Hermes\ Work\ space/Dropgrap/backend/crates/dg-types/src/lib.rs

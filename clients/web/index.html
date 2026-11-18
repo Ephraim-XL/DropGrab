@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>DropGrab</title>
+    <link rel="stylesheet" href="css/tokens.css" />
+    <link rel="stylesheet" href="css/app.css" />
+    <script>
+      // Apply the saved theme before first paint so there is no flash.
+      (function () {
+        var theme = 'light';
+        var text = 'default';
+        try {
+          var s = JSON.parse(localStorage.getItem('dropgrab.settings.v1') || '{}');
+          var mode = s.theme || 'system';
+          var dark = mode === 'dark' || (mode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          theme = dark ? 'dark' : 'light';
+          text = s.textSize || 'default';
+        } catch (error) {
+          /* first visit */
+        }
+        document.documentElement.dataset.theme = theme;
+        document.documentElement.dataset.text = text;
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root" class="app"></div>
+
+    <div id="file-warning" hidden style="max-width: 640px; padding: 32px; display: flex; flex-direction: column; gap: 16px">
+      <h1 class="t-headline">Open DropGrab through a local server</h1>
+      <p class="t-body ink-secondary">
+        The client is built as ES modules, which browsers only load over http. From the
+        <code>clients/web</code> folder, run:
+      </p>
+      <pre class="card t-body-sm" style="margin: 0"><code>python3 -m http.server 8000</code></pre>
+      <p class="t-body ink-secondary">Then open http://localhost:8000/ in this browser.</p>
+    </div>
+
+    <noscript>
+      <p style="padding: 32px">DropGrab needs JavaScript to render the interface.</p>
+    </noscript>
+
+    <script>
+      if (location.protocol === 'file:') {
+        document.getElementById('file-warning').hidden = false;
+        document.getElementById('root').hidden = true;
+      } else {
+        var entry = document.createElement('script');
+        entry.type = 'module';
+        entry.src = 'js/main.js';
+        document.body.appendChild(entry);
+      }
+    </script>
+  </body>
+</html>
